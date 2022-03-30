@@ -47,7 +47,7 @@ class PolygonDataPointMinute(object):
 class Polygon(object):
     def __init__(self):
         with open('/home/opc/private-info/polygon-api-key.txt', 'r') as f:
-            self.apiKey = f.readline()
+            self.apiKey = f.readline().strip()
 
         self.host = "api.polygon.io"
 
@@ -195,12 +195,12 @@ class Polygon(object):
             data_list = self.FillMinutelyData(data_list, to_date)
             print("Count of data: {c}".format(c = len(data_list)))
 
-            yesterday = datetime(2022, 3, 28, 0, 0, 0)
-            yesterday_data = [d for d in data_list if d.timestamp > yesterday]
-            if len(yesterday_data) > 0:
-                print("Yesterday: len = {l}".format(l = len(yesterday_data)))
-                for d in yesterday_data:
-                    print(d)
+            #yesterday = datetime(2022, 3, 28, 0, 0, 0)
+            #yesterday_data = [d for d in data_list if d.timestamp > yesterday]
+            #if len(yesterday_data) > 0:
+            #    print("Yesterday: len = {l}".format(l = len(yesterday_data)))
+            #    for d in yesterday_data:
+            #        print(d)
 
             # If the last day only has partial data, just remove all data from that day and we will get it later
             last_full_day_of_data = datetime(data_list[-1].timestamp.year, data_list[-1].timestamp.month, data_list[-1].timestamp.day, 0, 0, 0);

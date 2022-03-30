@@ -37,3 +37,45 @@ class DB(object):
 	
         self.cursor.executemany(sql, values)
         self.db.commit()
+
+    def GetTickersAndMinMaxDates(self):
+        sql = """ SELECT t1.ticker, t2.mn, t2.mx FROM stocks t1
+                  LEFT JOIN (SELECT ticker, MIN(`datetime`) AS mn, MAX(`datetime`) as mx FROM minute_data GROUP BY `ticker`) t2
+                  ON t1.ticker = t2.ticker;
+              """
+
+        self.cursor.execute(sql)
+        results = self.cursor.fetchall()
+        results_dict = {}
+
+        for row in results:
+            results_dict[row[0]] = (row[1], row[2])
+
+        return results_dict
+
+    def AddMinuteData(self, ticker, data):
+        sql = """ INSERT INTO minute_data (`ticker`, `open`, `high`, `low`, `close`, `volume`, `number_of_trades`, `volume_weighted_avg_price`, `datetime`) 
+                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) AS value_alias 
+                  ON DUPLICATE KEY UPDATE 
+                  `volume_weighted_avg_price` = value_alias.volume_weighted_avg_price
+              """
+
+        lower_index = 0
+        delta = 40000
+        upper_index = min(delta, len(data))
+        while upper_index < len(data):
+            print("Adding data for ticker: {t}   {l} - {u}".format(t = ticker, l = lower_index, u = upper_index))
+
+            values = [(ticker, d.open, d.high, d.low, d.close, d.volume, d.number_of_trades, d.volume_weighted_average, d.timestamp.strftime("%Y-%m-%d %H:%M:%S")) for d in data[lower_index:upper_index]]
+
+            self.cursor.executemany(sql, values)
+            self.db.commit()
+
+            lower_index = lower_index + delta
+            upper_index = min(upper_index + delta, len(data))
+
+        print("Adding data for ticker: {t}   {l} - {u}".format(t = ticker, l = lower_index, u = upper_index))
+        values = [(ticker, d.open, d.high, d.low, d.close, d.volume, d.number_of_trades, d.volume_weighted_average, d.timestamp.strftime("%Y-%m-%d %H:%M:%S")) for d in data[lower_index:upper_index]]
+
+        self.cursor.executemany(sql, values)
+        self.db.commit()
